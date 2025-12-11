@@ -233,6 +233,15 @@ const renderSpellingBee = (d: unknown) => {
   );
 };
 
+const getCacheBuster = () => {
+  const now = new Date();
+  const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const hour = now.getHours();
+  // Create 3 windows: 0-7 (v1), 8-15 (v2), 16-23 (v3)
+  const window = Math.floor(hour / 8); 
+  return `${date}-w${window}`;
+};
+
 export default function PuzzleDropdown({
   puzzleName,
   puzzleUrl,
@@ -240,6 +249,8 @@ export default function PuzzleDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [puzzleData, setPuzzleData] = useState<PuzzleData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+
 
   const handleToggle = async () => {
     const newIsOpen = !isOpen;
@@ -249,7 +260,11 @@ export default function PuzzleDropdown({
     if (newIsOpen && !puzzleData && !isLoading) {
       setIsLoading(true);
       try {
-        const res = await fetch(puzzleUrl);
+        const version = getCacheBuster();
+        const separator = puzzleUrl.includes('?') ? '&' : '?';
+        const url = `${puzzleUrl}${separator}v=${version}`;
+        
+        const res = await fetch(url, { cache: 'no-store' });
         const json = await res.json().catch(() => null);
         setPuzzleData({ ok: res.ok, data: json });
       } catch (err) {
